@@ -13,9 +13,13 @@ from flask import Flask, request
 # ==========================================================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")   # https://xxx.up.railway.app/
 DB_PATH = os.getenv("DB_PATH", "barber.db")
+
+# Список админов: несколько ID через запятую (без пробелов)
+_raw_admins = os.getenv("ADMIN_ID", "0")
+ADMIN_IDS = [int(x.strip()) for x in _raw_admins.split(",") if x.strip().isdigit()]
+ADMIN_ID = ADMIN_IDS[0] if ADMIN_IDS else 0
 
 if not BOT_TOKEN:
     raise ValueError("Укажите BOT_TOKEN в переменных окружения")
@@ -128,6 +132,15 @@ def save_appointment(user_id, username, name, phone, service, price, date_time):
     conn.close()
 
 
+def notify_admins(text):
+    """Отправить сообщение всем админам."""
+    for admin in ADMIN_IDS:
+        try:
+            bot.send_message(admin, text)
+        except Exception as e:
+            print(f"[NOTIFY] Не удалось уведомить админа {admin}: {e}", flush=True)
+
+
 # ==========================================================
 # ====================== КЛАВИАТУРЫ ========================
 # ==========================================================
@@ -195,6 +208,7 @@ def time_slots_inline(date_str):
 
 @bot.message_handler(commands=["start"])
 def start(message):
+    print(f"[HANDLER] /start от user_id={message.from_user.id}", flush=True)
     user_state.pop(message.from_user.id, None)
     bot.send_message(
         message.chat.id,
@@ -369,19 +383,14 @@ def step_phone(message):
         reply_markup=main_menu(),
     )
 
-    if ADMIN_ID:
-        try:
-            bot.send_message(
-                ADMIN_ID,
-                f"🆕 Новая запись!\n\n"
-                f"Услуга: {state['service']} ({state['price']})\n"
-                f"Имя: {state['name']}\n"
-                f"Телефон: {phone}\n"
-                f"Дата и время: {state['datetime']}\n"
-                f"Клиент: @{message.from_user.username or '—'} (ID: {message.from_user.id})",
-            )
-        except Exception as e:
-            print("Не удалось уведомить админа:", e)
+    notify_admins(
+        f"🆕 Новая запись!\n\n"
+        f"Услуга: {state['service']} ({state['price']})\n"
+        f"Имя: {state['name']}\n"
+        f"Телефон: {phone}\n"
+        f"Дата и время: {state['datetime']}\n"
+        f"Клиент: @{message.from_user.username or '—'} (ID: {message.from_user.id})"
+    )
 
     user_state.pop(message.from_user.id, None)
 
@@ -442,11 +451,7 @@ def cb_cancel_appointment(call):
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
     )
-    if ADMIN_ID:
-        try:
-            bot.send_message(ADMIN_ID, f"❌ Клиент отменил запись #{appt_id}: {row[1]} на {row[2]}")
-        except Exception:
-            pass
+    notify_admins(f"❌ Клиент отменил запись #{appt_id}: {row[1]} на {row[2]}")
 
 
 # ==========================================================
@@ -455,7 +460,8 @@ def cb_cancel_appointment(call):
 
 @bot.message_handler(commands=["admin"])
 def admin(message):
-    if message.from_user.id != ADMIN_ID:
+    print(f"[HANDLER] /admin от user_id={message.from_user.id}, ADMIN_IDS={ADMIN_IDS}", flush=True)
+    if message.from_user.id not in ADMIN_IDS:
         bot.send_message(message.chat.id, "У вас нет доступа.")
         return
 
@@ -494,7 +500,7 @@ def admin(message):
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("st:"))
 def cb_status(call):
-    if call.from_user.id != ADMIN_ID:
+    if call.from_user.id not in ADMIN_IDS:
         bot.answer_callback_query(call.id, "Нет доступа")
         return
     _, new_status, appt_id_str = call.data.split(":")
@@ -531,7 +537,7 @@ def cb_status(call):
         elif new_status == "done":
             bot.send_message(client_id, "Спасибо за визит! Ждём вас снова ✂️")
     except Exception as e:
-        print("Не удалось уведомить клиента:", e)
+        print("Не удалось уведомить клиента:", e, flush=True)
 
 
 # ==========================================================
@@ -565,7 +571,7 @@ def check_reminders():
                 cur.execute("UPDATE appointments SET reminded_hour = 1 WHERE id = ?", (appt_id,))
                 conn.commit()
             except Exception as e:
-                print("reminder hour:", e)
+                print("reminder hour:", e, flush=True)
         if not rd and delta <= timedelta(days=1, minutes=1):
             try:
                 bot.send_message(
@@ -575,7 +581,7 @@ def check_reminders():
                 cur.execute("UPDATE appointments SET reminded_day = 1 WHERE id = ?", (appt_id,))
                 conn.commit()
             except Exception as e:
-                print("reminder day:", e)
+                print("reminder day:", e, flush=True)
     conn.close()
 
 
@@ -584,7 +590,7 @@ def reminder_loop():
         try:
             check_reminders()
         except Exception as e:
-            print("Reminder loop error:", e)
+            print("Reminder loop error:", e, flush=True)
         time.sleep(60)
 
 
@@ -599,23 +605,31 @@ def index():
 
 @app.route('/' + BOT_TOKEN, methods=['POST'])
 def webhook():
-    if request.headers.get('content-type') == 'application/json':
+    print(">>> ПОЛУЧЕН POST ОТ TELEGRAM <<<", flush=True)
+    try:
         json_string = request.get_data().decode('utf-8')
+        print(">>> BODY:", json_string[:500], flush=True)
         update = telebot.types.Update.de_json(json_string)
         bot.process_new_updates([update])
+        print(">>> ОБРАБОТАНО OK", flush=True)
         return '', 200
-    return '', 403
+    except Exception as e:
+        print(">>> ОШИБКА в webhook:", repr(e), flush=True)
+        return '', 500
 
 
 def set_webhook():
     if not WEBHOOK_URL:
-        print("WEBHOOK_URL не задан — вебхук не установлен!")
+        print("WEBHOOK_URL не задан — вебхук не установлен!", flush=True)
         return
     url = WEBHOOK_URL.rstrip('/') + '/' + BOT_TOKEN
-    bot.remove_webhook()
-    time.sleep(1)
-    result = bot.set_webhook(url=url)
-    print(f"Вебхук установлен: {url} -> {result}")
+    try:
+        bot.remove_webhook()
+        time.sleep(1)
+        result = bot.set_webhook(url=url)
+        print(f"Вебхук установлен: {url} -> {result}", flush=True)
+    except Exception as e:
+        print(f"Ошибка установки вебхука: {e}", flush=True)
 
 
 # ==========================================================
@@ -623,7 +637,10 @@ def set_webhook():
 # ==========================================================
 
 if __name__ == "__main__":
-    print("Бот запущен в режиме webhook...")
+    print("Бот запущен в режиме webhook...", flush=True)
+    print(f"ADMIN_IDS: {ADMIN_IDS}", flush=True)
+    print(f"WEBHOOK_URL: {WEBHOOK_URL}", flush=True)
+    print(f"DB_PATH: {DB_PATH}", flush=True)
     set_webhook()
     threading.Thread(target=reminder_loop, daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
