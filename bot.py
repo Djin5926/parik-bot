@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 import telebot
 from telebot import types
+from flask import Flask, request
 
 # ==========================================================
 # ===================== НАСТРОЙКИ ==========================
@@ -13,11 +14,13 @@ from telebot import types
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")   # https://xxx.up.railway.app/
+DB_PATH = os.getenv("DB_PATH", "barber.db")
 
 if not BOT_TOKEN:
     raise ValueError("Укажите BOT_TOKEN в переменных окружения")
 
-# --- Информация о салоне (замени на свою) ---
+# --- Информация о салоне ---
 SALON_INFO = {
     "name": "Парикмахерская «У Катерины»",
     "address": "ул. Чехова, д.79 корпус 1",
@@ -38,16 +41,17 @@ SERVICES = {
 }
 
 # --- Рабочее расписание ---
-WORK_START_HOUR = 10       # с какого часа открываемся
-WORK_END_HOUR = 20         # до какого часа (не включая)
-SLOT_STEP_MINUTES = 60     # шаг между слотами, минут
-DAYS_AHEAD = 14            # на сколько дней вперёд показываем календарь
+WORK_START_HOUR = 10
+WORK_END_HOUR = 20
+SLOT_STEP_MINUTES = 60
+DAYS_AHEAD = 14
 
 # ==========================================================
 # ====================== БОТ И БД ==========================
 # ==========================================================
 
 bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
 
 STATUS_LABELS = {
     "new":       "🆕 Новая",
@@ -56,14 +60,12 @@ STATUS_LABELS = {
     "cancelled": "❌ Отменена",
 }
 
-# Временное состояние диалога: user_id -> {service, price, date, datetime, name}
 user_state = {}
-
 SERVICES_LIST = list(SERVICES.items())
 
 
 def db():
-    return sqlite3.connect("barber.db", check_same_thread=False)
+    return sqlite3.connect(DB_PATH, check_same_thread=False)
 
 
 def init_db():
@@ -85,7 +87,6 @@ def init_db():
             created_at TEXT
         )
     """)
-    # миграции для старых баз
     for ddl in [
         "ALTER TABLE appointments ADD COLUMN price TEXT DEFAULT ''",
         "ALTER TABLE appointments ADD COLUMN reminded_day INTEGER DEFAULT 0",
@@ -155,9 +156,8 @@ def calendar_inline():
     buttons = []
     for i in range(DAYS_AHEAD):
         d = today + timedelta(days=i)
-        label = d.strftime("%d.%m")
         buttons.append(types.InlineKeyboardButton(
-            text=label, callback_data=f"date:{d.isoformat()}"
+            text=d.strftime("%d.%m"), callback_data=f"date:{d.isoformat()}"
         ))
     kb.add(*buttons)
     kb.add(types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_flow"))
@@ -171,8 +171,8 @@ def time_slots_inline(date_str):
     t = start
     buttons = []
     while t < end:
-        slot_human = t.strftime("%Y-%m-%d %H:%M")  # для БД
-        slot_cb = t.strftime("%Y-%m-%d|%H:%M")     # для callback_data
+        slot_human = t.strftime("%Y-%m-%d %H:%M")
+        slot_cb = t.strftime("%Y-%m-%d|%H:%M")
         label = t.strftime("%H:%M")
         if is_slot_free(slot_human):
             buttons.append(types.InlineKeyboardButton(
@@ -250,7 +250,7 @@ def cb_service(call):
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("date:"))
 def cb_date(call):
-    date_str = call.data.split(":", 1)[1]  # 2026-10-15
+    date_str = call.data.split(":", 1)[1]
     state = user_state.setdefault(call.from_user.id, {})
     if "service" not in state:
         bot.answer_callback_query(call.id, "Сначала выберите услугу")
@@ -290,7 +290,7 @@ def cb_cancel_flow(call):
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("time:"))
 def cb_time(call):
-    slot = call.data.split(":", 1)[1].replace("|", " ")  # "2026-10-15 14:00"
+    slot = call.data.split(":", 1)[1].replace("|", " ")
     if not is_slot_free(slot):
         bot.answer_callback_query(call.id, "Это время уже занято")
         return
@@ -556,7 +556,6 @@ def check_reminders():
         delta = dt - now
         if delta <= timedelta(0):
             continue
-        # за час
         if not rh and delta <= timedelta(hours=1, minutes=1):
             try:
                 bot.send_message(
@@ -567,7 +566,6 @@ def check_reminders():
                 conn.commit()
             except Exception as e:
                 print("reminder hour:", e)
-        # за день
         if not rd and delta <= timedelta(days=1, minutes=1):
             try:
                 bot.send_message(
@@ -591,11 +589,41 @@ def reminder_loop():
 
 
 # ==========================================================
+# ======================== WEBHOOK =========================
+# ==========================================================
+
+@app.route('/', methods=['GET'])
+def index():
+    return "Bot is running", 200
+
+
+@app.route('/' + BOT_TOKEN, methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return '', 200
+    return '', 403
+
+
+def set_webhook():
+    if not WEBHOOK_URL:
+        print("WEBHOOK_URL не задан — вебхук не установлен!")
+        return
+    url = WEBHOOK_URL.rstrip('/') + '/' + BOT_TOKEN
+    bot.remove_webhook()
+    time.sleep(1)
+    result = bot.set_webhook(url=url)
+    print(f"Вебхук установлен: {url} -> {result}")
+
+
+# ==========================================================
 # ======================== СТАРТ ===========================
 # ==========================================================
 
 if __name__ == "__main__":
+    print("Бот запущен в режиме webhook...")
+    set_webhook()
     threading.Thread(target=reminder_loop, daemon=True).start()
-    print("Бот запущен...")
-    bot.infinity_polling(timeout=30, long_polling_timeout=25)
-
+    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
