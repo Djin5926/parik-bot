@@ -633,14 +633,21 @@ def set_webhook():
 
 
 # ==========================================================
-# ======================== СТАРТ ===========================
+# ============== ИНИЦИАЛИЗАЦИЯ ПРИ СТАРТЕ ==================
 # ==========================================================
+# Важно: этот код на уровне модуля, чтобы выполнялся и под gunicorn,
+# а не только при запуске `python bot.py`.
 
+print("Бот запущен в режиме webhook...", flush=True)
+print(f"ADMIN_IDS: {ADMIN_IDS}", flush=True)
+print(f"WEBHOOK_URL: {WEBHOOK_URL}", flush=True)
+print(f"DB_PATH: {DB_PATH}", flush=True)
+set_webhook()
+threading.Thread(target=reminder_loop, daemon=True).start()
+
+
+# ==========================================================
+# ============== ЗАПУСК ДЛЯ ЛОКАЛЬНОЙ ОТЛАДКИ ==============
+# ==========================================================
 if __name__ == "__main__":
-    print("Бот запущен в режиме webhook...", flush=True)
-    print(f"ADMIN_IDS: {ADMIN_IDS}", flush=True)
-    print(f"WEBHOOK_URL: {WEBHOOK_URL}", flush=True)
-    print(f"DB_PATH: {DB_PATH}", flush=True)
-    set_webhook()
-    threading.Thread(target=reminder_loop, daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
