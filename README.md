@@ -19,7 +19,7 @@
 
 ### Для администратора
 
-- Просмотр всех активных записей командой /admin
+- Просмотр всех активных записей командой `/admin`
 - Подтверждение, отмена и отметка "выполнена"
 - Уведомления о новых записях и отменах в реальном времени
 - Управление полностью через Telegram, без веб-панели
@@ -35,44 +35,55 @@
 - SQLite — хранение записей и услуг
 - gunicorn — продакшн-сервер
 - Railway — хостинг
-- ---
+
+---
 
 ## Быстрый старт
 
 ### 1. Клонировать репозиторий
 
+```bash
 git clone https://github.com/Djin5926/parik-bot.git
 cd parik-bot
+```
 
 ### 2. Виртуальное окружение и зависимости
 
+```bash
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+Для Linux/macOS: вместо `venv\Scripts\activate` используйте `source venv/bin/activate`.
 
 ### 3. Переменные окружения
 
-Создайте файл .env в корне проекта:
+Создайте файл `.env` в корне проекта:
 
+```env
 BOT_TOKEN=1234567890:AA-your-token-here
 ADMIN_IDS=123456789,987654321
 WEBHOOK_URL=https://your-app.railway.app
 PORT=8080
+```
 
-Свой Telegram ID можно узнать через бота @userinfobot.
+Свой Telegram ID можно узнать через бота [@userinfobot](https://t.me/userinfobot).
 
 ### 4. Запуск
 
+```bash
 python bot.py
+```
 
 ---
 
 ## Деплой на Railway
 
 1. Форкните репозиторий.
-2. Зайдите на railway.app, создайте проект через Deploy from GitHub.
-3. Добавьте переменные окружения: BOT_TOKEN, ADMIN_IDS, WEBHOOK_URL, PORT.
-4. Railway выдаст публичный URL — вставьте его в WEBHOOK_URL.
+2. Зайдите на [railway.app](https://railway.app), создайте проект через Deploy from GitHub.
+3. Добавьте переменные окружения: `BOT_TOKEN`, `ADMIN_IDS`, `WEBHOOK_URL`, `PORT`.
+4. Railway выдаст публичный URL — вставьте его в `WEBHOOK_URL`.
 
 Альтернативы: Render, Fly.io, любой VPS с systemd и nginx.
 
@@ -80,6 +91,7 @@ python bot.py
 
 ## Структура проекта
 
+```
 Parik/
 ├── bot.py               # логика бота, обработчики
 ├── main.py              # точка входа
@@ -87,16 +99,18 @@ Parik/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+```
 
 ---
 
 ## Безопасность
 
 - Токен бота, ID админов и URL вебхука — только через переменные окружения
-- config.json добавлен в .gitignore, в репозиторий не попадает
+- `config.json` добавлен в `.gitignore`, в репозиторий не попадает
 - Перед записью проверяется, что слот свободен — два клиента не займут одно время
 - Валидация имени и телефона на стороне бота
-- ---
+
+---
 
 ## Скриншоты
 
@@ -124,9 +138,11 @@ MIT
 
 Валерий — Python-разработчик
 
-Telegram: @Valery3298
-GitHub: https://github.com/Djin5926
+Telegram: [@Valery298](https://t.me/Valery298)
+GitHub: [@Djin5926](https://github.com/Djin5926)
 
 Разрабатываю Telegram-ботов и автоматизирую бизнес-процессы под заказ.
 
 **Проект:** бот для салона красоты, работает в продакшене, заказчик — владелец салона.
+
+
