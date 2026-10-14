@@ -1,0 +1,4 @@
+pyTelegramBotAPI==4.23.0
+Flask==3.0.3
+tzdata==2024.2
+
