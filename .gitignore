@@ -1,0 +1,7 @@
+config.json 
+barber.db 
+img.png 
+.idea/ 
+__pycache__/ 
+venv/ 
+.venv/ 
