@@ -138,7 +138,7 @@ MIT
 
 Валерий — Python-разработчик
 
-Telegram: [@Valery298](https://t.me/Valery298)
+Telegram: [@Valery3298](https://t.me/Valery298)
 GitHub: [@Djin5926](https://github.com/Djin5926)
 
 Разрабатываю Telegram-ботов и автоматизирую бизнес-процессы под заказ.
