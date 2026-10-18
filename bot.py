@@ -36,8 +36,27 @@ def now_msk():
     return _now_local().replace(tzinfo=None)
 
 
-ADMIN_IDS = [201946011, 515192929]
-ADMIN_ID = ADMIN_IDS[0] if ADMIN_IDS else 0
+def _parse_admin_ids(raw: str) -> list[int]:
+    """Парсит ADMIN_IDS из строки '1,2,3' в список int, игнорируя мусор."""
+    result = []
+    for chunk in (raw or "").split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        try:
+            result.append(int(chunk))
+        except ValueError:
+            print(f"[CONFIG] Игнорирую некорректный ADMIN_ID: {chunk!r}", flush=True)
+    return result
+
+
+ADMIN_IDS = _parse_admin_ids(os.getenv("ADMIN_IDS", ""))
+if not ADMIN_IDS:
+    # Явно падаем, если админы не заданы — чтобы не запуститься в небезопасной конфигурации
+    raise ValueError(
+        "Укажите ADMIN_IDS в переменных окружения (например, ADMIN_IDS=201946011,515192929)"
+    )
+ADMIN_ID = ADMIN_IDS[0]
 
 if not BOT_TOKEN:
     raise ValueError("Укажите BOT_TOKEN в переменных окружения")
