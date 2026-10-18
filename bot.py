@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 import json
 import sqlite3
@@ -36,7 +39,7 @@ def now_msk():
     return _now_local().replace(tzinfo=None)
 
 
-ADMIN_IDS = [201946011, 515192929]
+ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
 ADMIN_ID = ADMIN_IDS[0] if ADMIN_IDS else 0
 
 if not BOT_TOKEN:
@@ -1561,7 +1564,7 @@ if WEBHOOK_URL:
     @app.route('/', methods=['GET'])
     def index(): return "Bot is running", 200
 
-    @app.route('/' + BOT_TOKEN, methods=['POST'])
+    @app.route('/webhook/' + BOT_TOKEN, methods=['POST'])
     def webhook():
         try:
             json_string = request.get_data().decode('utf-8')
@@ -1569,16 +1572,18 @@ if WEBHOOK_URL:
             bot.process_new_updates([update])
             return '', 200
         except Exception as e:
-            print("webhook error:", repr(e), flush=True); return '', 500
+            err_text = repr(e).replace(BOT_TOKEN, "***")
+            print("webhook error:", err_text, flush=True); return '', 500
 
     def set_webhook():
         url = WEBHOOK_URL.rstrip('/') + '/' + BOT_TOKEN
         try:
             bot.remove_webhook(); time.sleep(1)
             result = bot.set_webhook(url=url)
-            print(f"Вебхук: {url} -> {result}", flush=True)
+            print(f"Вебхук: установлен -> {result}", flush=True)
         except Exception as e:
-            print(f"Ошибка вебхука: {e}", flush=True)
+            err_text = repr(e).replace(BOT_TOKEN, "***")
+            print(f"Ошибка вебхука: {err_text}", flush=True)
 
 
 # ==========================================================
@@ -1613,12 +1618,12 @@ def set_bot_commands():
 
 if WEBHOOK_URL:
     print("Режим: WEBHOOK", flush=True)
-    print(f"ADMIN_IDS: {ADMIN_IDS}", flush=True)
+    print(f"ADMIN_IDS: {len(ADMIN_IDS)} шт.", flush=True)
     set_webhook(); set_bot_commands()
     threading.Thread(target=reminder_loop, daemon=True).start()
 else:
     print("Режим: POLLING", flush=True)
-    print(f"ADMIN_IDS: {ADMIN_IDS}", flush=True)
+    print(f"ADMIN_IDS: {len(ADMIN_IDS)} шт.", flush=True)
     print(f"CONFIG_PATH: {CONFIG_PATH}", flush=True)
     try:
         bot.remove_webhook(); time.sleep(1)
@@ -1631,7 +1636,7 @@ else:
 
 if __name__ == "__main__":
     if WEBHOOK_URL:
-        app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), threaded=True)
+        app.run(host="127.0.0.1", port=int(os.environ.get('PORT', 5000)), threaded=True)
     else:
         print("=" * 50, flush=True)
         print("  БОТ ЗАПУЩЕН", flush=True)
