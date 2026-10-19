@@ -13,6 +13,24 @@ from telebot import types
 from telebot.types import BotCommand, BotCommandScopeChat
 from flask import Flask, request
 
+import html as _html
+
+
+def esc(text) -> str:
+    """Экранирует данные для вставки в сообщение с parse_mode='HTML'."""
+    if text is None:
+        return ""
+    return _html.escape(str(text), quote=False)
+
+
+def clean_text(text, max_len: int = 64) -> str:
+    """Убирает управляющие символы и обрезает длину. Для сохранения в БД."""
+    if not text:
+        return ""
+    cleaned = "".join(ch for ch in str(text) if ch.isprintable())
+    return cleaned.strip()[:max_len]
+
+
 # ==========================================================
 # ===================== НАСТРОЙКИ ==========================
 # ==========================================================
@@ -355,9 +373,9 @@ def my_cmd(message): my_appointments(message)
 @bot.message_handler(func=lambda m: m.text == "Услуги")
 def show_services(message):
     services = CONFIG["services"]
-    male = [f"• {n.replace('М · ', '')} — {i['price']} (~{i['duration']} мин)"
+    male = [f"• {esc(n.replace('М · ', ''))} — {esc(i['price'])} (~{i['duration']} мин)"
             for n, i in services.items() if n.startswith("М ·")]
-    female = [f"• {n.replace('Ж · ', '')} — {i['price']} (~{i['duration']} мин)"
+    female = [f"• {esc(n.replace('Ж · ', ''))} — {esc(i['price'])} (~{i['duration']} мин)"
               for n, i in services.items() if n.startswith("Ж ·")]
     text = ("✂️ <b>Мужской зал</b>\n" + "\n".join(male) + "\n\n"
             "💇‍♀️ <b>Женский зал</b>\n" + "\n".join(female) + "\n\n"
@@ -462,7 +480,7 @@ def cb_time(call):
 
 
 def step_name(message):
-    name = message.text.strip()
+    name = clean_text(message.text, max_len=64)
     if len(name) < 2:
         msg = bot.send_message(message.chat.id, "Имя слишком короткое, введите ещё раз:")
         bot.register_next_step_handler(msg, step_name); return
@@ -472,11 +490,12 @@ def step_name(message):
 
 
 def step_phone(message):
-    phone = message.text.strip()
-    digits = "".join(ch for ch in phone if ch.isdigit())
+    phone_raw = message.text.strip()
+    digits = "".join(ch for ch in phone_raw if ch.isdigit())
     if len(digits) < 10:
         msg = bot.send_message(message.chat.id, "Похоже, номер некорректный. Введите ещё раз:")
         bot.register_next_step_handler(msg, step_phone); return
+    phone = clean_text(phone_raw, max_len=32)
     state = user_state.get(message.from_user.id, {})
     if not all(k in state for k in ("service", "price", "datetime", "name")):
         bot.send_message(message.chat.id, "Что-то пошло не так. Начните заново.",
@@ -690,7 +709,7 @@ def _build_day_view(date_str):
             t = dt_str.split(" ")[1]
             st = STATUS_LABELS.get(status, "")
             svc = service.replace('М · ', 'М ').replace('Ж · ', 'Ж ')
-            lines.append(f"  <b>{t}</b> · {name} · {svc} · {st}")
+            lines.append(f"  <b>{t}</b> · {esc(name)} · {esc(svc)} · {st}")
     else:
         lines.append("<i>Записей нет — весь день свободен.</i>")
     lines.append("")
@@ -766,8 +785,8 @@ def cb_adm_slot(call):
     time_str = dt.split(" ")[1]
 
     text = (f"<b>Запись #{appt_id}</b>\n\n"
-            f"👤 {name}\n📞 {phone}\n"
-            f"💇 {service}\n💵 {price}\n"
+            f"👤 {esc(name)}\n📞 {esc(phone)}\n"
+            f"💇 {esc(service)}\n💵 {esc(price)}\n"
             f"🕒 {date_str} в {time_str}\n"
             f"Статус: {STATUS_LABELS_LONG.get(status, status)}")
 
@@ -888,7 +907,7 @@ def _admin_show_time_picker(call, date_str):
         for bname, bsvc, bdt in busy_rows:
             t = bdt.split(" ")[1]
             svc = bsvc.replace('М · ', 'М ').replace('Ж · ', 'Ж ')
-            lines.append(f"  {t} — {bname} ({svc})")
+            lines.append(f"  {t} — {esc(bname)} ({esc(svc)})")
         lines.append("")
     lines.append("Шаг 2/4. Выберите время:")
     text = "\n".join(lines)
@@ -1036,7 +1055,7 @@ def cb_abs_svc(call):
         f"➕ <b>Новая запись</b>\n\n"
         f"📅 {wd} {st.get('date','')}\n"
         f"🕒 {st.get('time','')}\n"
-        f"💇 <b>{name}</b> ({info['price']}, ~{info['duration']} мин)\n\n"
+        f"💇 <b>{esc(name)}</b> ({esc(info['price'])}, ~{info['duration']} мин)\n\n"
         f"Шаг 4/4. Введите имя клиента:",
         chat_id=call.message.chat.id, message_id=call.message.message_id,
         parse_mode="HTML")
@@ -1055,7 +1074,7 @@ def cb_ab_cancel(call):
 
 def ab_step_name(message):
     if not is_admin(message.from_user.id): return
-    name = message.text.strip()
+    name = clean_text(message.text, max_len=64)
     if len(name) < 2:
         msg = bot.send_message(message.chat.id, "Слишком коротко. Введите ещё раз:")
         bot.register_next_step_handler(msg, ab_step_name); return
@@ -1066,11 +1085,12 @@ def ab_step_name(message):
 
 def ab_step_phone(message):
     if not is_admin(message.from_user.id): return
-    phone = message.text.strip()
-    digits = "".join(ch for ch in phone if ch.isdigit())
+    phone_raw = message.text.strip()
+    digits = "".join(ch for ch in phone_raw if ch.isdigit())
     if len(digits) < 10:
         msg = bot.send_message(message.chat.id, "Похоже, номер некорректный. Введите ещё раз:")
         bot.register_next_step_handler(msg, ab_step_phone); return
+    phone = clean_text(phone_raw, max_len=32)
 
     st = ab_state.get(message.from_user.id, {})
     if not all(k in st for k in ("service", "price", "time", "name")):
@@ -1095,8 +1115,8 @@ def ab_step_phone(message):
     bot.send_message(
         message.chat.id,
         f"✅ <b>Запись оформлена</b>\n\n"
-        f"👤 {st['name']}\n📞 {phone}\n"
-        f"💇 {st['service']} ({st['price']})\n"
+        f"👤 {esc(st['name'])}\n📞 {esc(phone)}\n"
+        f"💇 {esc(st['service'])} ({esc(st['price'])})\n"
         f"🕒 {st['time']}",
         reply_markup=admin_root_kb(), parse_mode="HTML")
 
@@ -1156,7 +1176,7 @@ def cb_pr_svc(call):
     name, info = services_list[idx]
     bot.answer_callback_query(call.id)
     bot.edit_message_text(
-        f"<b>{name}</b>\n\n💵 Цена: {info['price']}\n⏱ Длительность: {info['duration']} мин",
+        f"<b>{esc(name)}</b>\n\n💵 Цена: {esc(info['price'])}\n⏱ Длительность: {info['duration']} мин",
         chat_id=call.message.chat.id, message_id=call.message.message_id,
         reply_markup=service_card_kb(idx), parse_mode="HTML")
 
@@ -1173,7 +1193,7 @@ def cb_pr_edit_name(call):
     admin_state[call.from_user.id] = {"action": "edit_name", "idx": idx, "old": name}
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id,
-                     f"Текущее название: <b>{name}</b>\n\nПришлите новое (или /cancel):",
+                     f"Текущее название: <b>{esc(name)}</b>\n\nПришлите новое (или /cancel):",
                      parse_mode="HTML")
     bot.register_next_step_handler_by_chat_id(call.message.chat.id, adm_step_value, "name")
 
@@ -1190,7 +1210,7 @@ def cb_pr_edit_price(call):
     admin_state[call.from_user.id] = {"action": "edit_price", "idx": idx, "old": name}
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id,
-                     f"Текущая цена: <b>{info['price']}</b>\n\n"
+                     f"Текущая цена: <b>{esc(info['price'])}</b>\n\n"
                      f"Пришлите новую (например: 1500 ₽ или 1500–2000 ₽).\nИли /cancel.",
                      parse_mode="HTML")
     bot.register_next_step_handler_by_chat_id(call.message.chat.id, adm_step_value, "price")
@@ -1229,7 +1249,7 @@ def cb_pr_del(call):
         types.InlineKeyboardButton("❌ Нет", callback_data=f"pr:svc:{idx}"),
     )
     bot.answer_callback_query(call.id)
-    bot.edit_message_text(f"Удалить услугу <b>{name}</b>?",
+    bot.edit_message_text(f"Удалить услугу <b>{esc(name)}</b>?",
                           chat_id=call.message.chat.id, message_id=call.message.message_id,
                           reply_markup=kb, parse_mode="HTML")
 
@@ -1376,7 +1396,7 @@ def cb_adm_info(call):
     bot.answer_callback_query(call.id)
     bot.edit_message_text(
         f"📞 <b>Информация о салоне</b>\n\n"
-        f"Название: {s['name']}\nАдрес: {s['address']}\nТелефон: {s['phone']}",
+        f"Название: {esc(s['name'])}\nАдрес: {esc(s['address'])}\nТелефон: {esc(s['phone'])}",
         chat_id=call.message.chat.id, message_id=call.message.message_id,
         reply_markup=info_kb(), parse_mode="HTML")
 
@@ -1390,7 +1410,7 @@ def cb_adm_info_edit(call):
     admin_state[call.from_user.id] = {"action": f"info_{key}"}
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id,
-                     f"Текущее значение: <b>{CONFIG['salon'][key]}</b>\n\n"
+                     f"Текущее значение: <b>{esc(CONFIG['salon'][key])}</b>\n\n"
                      f"Пришлите новое (или /cancel).", parse_mode="HTML")
     bot.register_next_step_handler_by_chat_id(call.message.chat.id, adm_step_value, f"info_{key}")
 
@@ -1423,7 +1443,7 @@ def adm_step_value(message, expected):
         old = sl[idx][0]; info = CONFIG["services"].pop(old)
         CONFIG["services"][text] = info; save_config()
         admin_state.pop(message.from_user.id, None)
-        bot.send_message(message.chat.id, f"✅ Название обновлено: <b>{text}</b>",
+        bot.send_message(message.chat.id, f"✅ Название обновлено: <b>{esc(text)}</b>",
                          reply_markup=admin_root_kb(), parse_mode="HTML"); return
 
     if action == "price":
@@ -1431,7 +1451,7 @@ def adm_step_value(message, expected):
         if idx >= len(sl): admin_state.pop(message.from_user.id, None); return
         CONFIG["services"][sl[idx][0]]["price"] = text; save_config()
         admin_state.pop(message.from_user.id, None)
-        bot.send_message(message.chat.id, f"✅ Цена обновлена: <b>{text}</b>",
+        bot.send_message(message.chat.id, f"✅ Цена обновлена: <b>{esc(text)}</b>",
                          reply_markup=admin_root_kb(), parse_mode="HTML"); return
 
     if action == "duration":
@@ -1471,7 +1491,7 @@ def adm_step_value(message, expected):
         CONFIG["services"][name] = {"price": price, "duration": int(text)}; save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id,
-                         f"✅ Добавлена услуга:\n<b>{name}</b> — {price} ({text} мин)",
+                         f"✅ Добавлена услуга:\n<b>{esc(name)}</b> — {esc(price)} ({text} мин)",
                          reply_markup=admin_root_kb(), parse_mode="HTML"); return
 
     if action == "sch_start":
@@ -1505,7 +1525,7 @@ def adm_step_value(message, expected):
             bot.register_next_step_handler(msg, adm_step_value, action); return
         CONFIG["salon"][key] = text; save_config()
         admin_state.pop(message.from_user.id, None)
-        bot.send_message(message.chat.id, f"✅ Обновлено: <b>{text}</b>",
+        bot.send_message(message.chat.id, f"✅ Обновлено: <b>{esc(text)}</b>",
                          reply_markup=admin_root_kb(), parse_mode="HTML"); return
 
 
@@ -1642,4 +1662,4 @@ if __name__ == "__main__":
         print("  БОТ ЗАПУЩЕН", flush=True)
         print("=" * 50, flush=True)
         bot.infinity_polling(timeout=30, long_polling_timeout=25)
-        
+
