@@ -37,6 +37,7 @@ def clean_text(text, max_len: int = 64) -> str:
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
 DB_PATH = os.getenv("DB_PATH", "barber.db")
 CONFIG_PATH = os.getenv("CONFIG_PATH", "config.json")
 
@@ -1581,11 +1582,11 @@ def reminder_loop():
 # ==========================================================
 
 if WEBHOOK_URL:
-    @app.route('/', methods=['GET'])
-    def index(): return "Bot is running", 200
-
-    @app.route('/webhook/' + BOT_TOKEN, methods=['POST'])
+    @app.route('/webhook', methods=['POST'])
     def webhook():
+        secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+        if not WEBHOOK_SECRET or secret != WEBHOOK_SECRET:
+            return 'Forbidden', 403
         try:
             json_string = request.get_data().decode('utf-8')
             update = telebot.types.Update.de_json(json_string)
@@ -1594,17 +1595,16 @@ if WEBHOOK_URL:
         except Exception as e:
             err_text = repr(e).replace(BOT_TOKEN, "***")
             print("webhook error:", err_text, flush=True); return '', 500
-
     def set_webhook():
-        url = WEBHOOK_URL.rstrip('/') + '/' + BOT_TOKEN
+        url = WEBHOOK_URL.rstrip('/') + '/webhook'
         try:
-            bot.remove_webhook(); time.sleep(1)
-            result = bot.set_webhook(url=url)
+            bot.remove_webhook();
+            time.sleep(1)
+            result = bot.set_webhook(url=url, secret_token=WEBHOOK_SECRET)
             print(f"Вебхук: установлен -> {result}", flush=True)
         except Exception as e:
             err_text = repr(e).replace(BOT_TOKEN, "***")
             print(f"Ошибка вебхука: {err_text}", flush=True)
-
 
 # ==========================================================
 # ================= КОМАНДЫ ================================
