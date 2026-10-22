@@ -1,10 +1,35 @@
-config.json 
-barber.db 
-img.png 
-.idea/ 
-__pycache__/ 
-venv/ 
-.venv/ 
+# --- Секреты и настройки ---
 .env
 .env.*
+config.json
+
+# --- База данных и бэкапы ---
+barber.db
+*.sqlite3
 *.bak
+
+# --- Безопасность (ключи и логи) ---
+*.ppk
+*.log
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+
+# --- IDE (PyCharm, VS Code) ---
+.idea/
+.vscode/
+
+# --- Системный мусор (Windows / macOS) ---
+.DS_Store
+Thumbs.db
+
+# --- ВАЖНО: Картинки ---
+# Если img.png нужна боту для отправки (например, логотип) — НЕ добавляйте её сюда.
+# Если это просто ваш скриншот для README — раскомментируйте строку ниже:
+# img.png
