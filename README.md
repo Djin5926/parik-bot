@@ -149,16 +149,12 @@ parik-bot/
 ├── .gitignore
 ├── docs/
 │   └── screenshots/     # 📸 Скриншоты интерфейса
-│       ├── 01-main-menu.png
-│       ├── 02-services.png
-│       ├── 03-calendar.png
-│       ├── 04-time-slots.png
-│       ├── 05-confirm.png
-│       ├── 06-my-appointments.png
-│       ├── 07-admin-panel.png
-│       ├── 08-admin-calendar.png
-│       ├── 09-appointment-card.png
-│       └── 10-price-editor.png
+│       ├── 1-menu.png
+│       ├── 2-services.png
+│       ├── 3-calendar.png
+│       ├── 4-slots.png
+│       ├── 5-confirm.png
+│       └── 6-admin.png
 └── README.md
 🛡️ Безопасность и эксплуатация (Production)
 Проект развёрнут на VPS Hostkey.ru (Ubuntu 22.04) в папке
