@@ -1644,10 +1644,12 @@ def reminder_loop():
 # ==========================================================
 
 if WEBHOOK_URL:
-    @app.route('/webhook', methods=['POST'])
+
+    @app.route('/webhook', methods=['POST'], strict_slashes=False)
     def webhook():
         secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
-        if not WEBHOOK_SECRET or secret != WEBHOOK_SECRET:
+
+        if WEBHOOK_SECRET and secret != WEBHOOK_SECRET:
             return 'Forbidden', 403
         try:
             json_string = request.get_data().decode('utf-8')
@@ -1660,17 +1662,20 @@ if WEBHOOK_URL:
             return '', 500
 
 
+
     def set_webhook():
-        url = WEBHOOK_URL.rstrip('/') + '/webhook'
+        base_url = WEBHOOK_URL.rstrip('/')
+        if not base_url.endswith('/webhook'):
+            base_url += '/webhook'
+        url = base_url + '/'  # Добавляем слэш на конце для Nginx
         try:
-            bot.remove_webhook();
+            bot.remove_webhook()
             time.sleep(1)
             result = bot.set_webhook(url=url, secret_token=WEBHOOK_SECRET)
             print(f"Вебхук: установлен -> {result}", flush=True)
         except Exception as e:
             err_text = repr(e).replace(BOT_TOKEN, "***")
             print(f"Ошибка вебхука: {err_text}", flush=True)
-
 
 # ==========================================================
 # ================= КОМАНДЫ ================================
