@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import os
@@ -43,12 +44,15 @@ CONFIG_PATH = os.getenv("CONFIG_PATH", "config.json")
 
 try:
     from zoneinfo import ZoneInfo
+
     MSK = ZoneInfo("Europe/Moscow")
+
 
     def _now_local():
         return datetime.now(MSK)
 except Exception:
     MSK = None
+
 
     def _now_local():
         return datetime.utcnow() + timedelta(hours=3)
@@ -63,7 +67,6 @@ ADMIN_ID = ADMIN_IDS[0] if ADMIN_IDS else 0
 
 if not BOT_TOKEN:
     raise ValueError("Укажите BOT_TOKEN в переменных окружения")
-
 
 # ==========================================================
 # ==================== КОНФИГ ==============================
@@ -84,23 +87,23 @@ DEFAULT_CONFIG = {
         "days_off": [6],
     },
     "services": {
-        "М · Стрижка мужская":            {"price": "1400 ₽",        "duration": 30},
-        "М · Стрижка 1 насадкой":         {"price": "800 ₽",         "duration": 30},
-        "М · Стрижка 2 насадками":        {"price": "1000 ₽",        "duration": 30},
-        "М · Стрижка ножницами":          {"price": "1500 ₽",        "duration": 60},
-        "М · Камуфляж седины":            {"price": "1500–2500 ₽",   "duration": 120},
-        "М · Рисунки на голове":          {"price": "100–300 ₽",     "duration": 30},
-        "Ж · Стрижка женская":            {"price": "2000 ₽",        "duration": 60},
-        "Ж · Уход за волосами":           {"price": "2000–2500 ₽",   "duration": 60},
-        "Ж · Укладка":                    {"price": "800–1500 ₽",    "duration": 90},
-        "Ж · Локоны":                     {"price": "1800–2000 ₽",   "duration": 90},
-        "Ж · Мытьё головы + укладка":     {"price": "1200–2000 ₽",   "duration": 60},
-        "Ж · Окрашивание в 1 тон":        {"price": "5000 ₽",        "duration": 120},
-        "Ж · Тонирование":                {"price": "2500–3500 ₽",   "duration": 90},
-        "Ж · Мелирование + тонирование":  {"price": "10000–13000 ₽", "duration": 270},
-        "Ж · Контуринг":                  {"price": "2500–5000 ₽",   "duration": 210},
-        "Ж · Airtouch":                   {"price": "15000–18000 ₽", "duration": 480},
-        "Ж · Стрижка чёлки":              {"price": "250–350 ₽",     "duration": 15},
+        "М • Стрижка мужская": {"price": "1400 ₽", "duration": 30},
+        "М • Стрижка 1 насадкой": {"price": "800 ₽", "duration": 30},
+        "М • Стрижка 2 насадками": {"price": "1000 ₽", "duration": 30},
+        "М • Стрижка ножницами": {"price": "1500 ₽", "duration": 60},
+        "М • Камуфляж седины": {"price": "1500–2500 ₽", "duration": 120},
+        "М • Рисунки на голове": {"price": "100–300 ₽", "duration": 30},
+        "Ж • Стрижка женская": {"price": "2000 ₽", "duration": 60},
+        "Ж • Уход за волосами": {"price": "2000–2500 ₽", "duration": 60},
+        "Ж • Укладка": {"price": "800–1500 ₽", "duration": 90},
+        "Ж • Локоны": {"price": "1800–2000 ₽", "duration": 90},
+        "Ж • Мытьё головы + укладка": {"price": "1200–2000 ₽", "duration": 60},
+        "Ж • Окрашивание в 1 тон": {"price": "5000 ₽", "duration": 120},
+        "Ж • Тонирование": {"price": "2500–3500 ₽", "duration": 90},
+        "Ж • Мелирование + тонирование": {"price": "10000–13000 ₽", "duration": 270},
+        "Ж • Контуринг": {"price": "2500–5000 ₽", "duration": 210},
+        "Ж • Airtouch": {"price": "15000–18000 ₽", "duration": 480},
+        "Ж • Стрижка чёлки": {"price": "250–350 ₽", "duration": 15},
     },
 }
 
@@ -128,7 +131,8 @@ def save_config():
             json.dump(CONFIG, f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
-        print(f"[CONFIG] {e}", flush=True); return False
+        print(f"[CONFIG] {e}", flush=True);
+        return False
 
 
 CONFIG = load_config()
@@ -155,7 +159,8 @@ def db():
 
 
 def init_db():
-    conn = db(); cur = conn.cursor()
+    conn = db();
+    cur = conn.cursor()
     try:
         cur.execute("PRAGMA journal_mode=WAL")
     except sqlite3.OperationalError:
@@ -175,7 +180,8 @@ def init_db():
                     "ON appointments(date_time) WHERE status != 'cancelled'")
     except sqlite3.OperationalError:
         pass
-    conn.commit(); conn.close()
+    conn.commit();
+    conn.close()
 
 
 init_db()
@@ -196,7 +202,8 @@ def is_day_off(date_obj):
 
 
 def salon_hours_text():
-    s = CONFIG["schedule"]; offs = s["days_off"]
+    s = CONFIG["schedule"];
+    offs = s["days_off"]
     if not offs:
         return f"{s['work_start_hour']:02d}:00–{s['work_end_hour']:02d}:00, ежедневно"
     off_names = ", ".join(WEEKDAY_NAMES[d] for d in sorted(offs))
@@ -212,9 +219,11 @@ def is_slot_free(date_time_str, duration_min=60, ignore_id=None):
     if is_day_off(start.date()):
         return False
     end = start + timedelta(minutes=duration_min)
-    conn = db(); cur = conn.cursor()
+    conn = db();
+    cur = conn.cursor()
     cur.execute("SELECT id, service, date_time FROM appointments WHERE status != 'cancelled'")
-    rows = cur.fetchall(); conn.close()
+    rows = cur.fetchall();
+    conn.close()
     for aid, service, dt_str in rows:
         if ignore_id is not None and aid == ignore_id:
             continue
@@ -229,14 +238,16 @@ def is_slot_free(date_time_str, duration_min=60, ignore_id=None):
 
 
 def save_appointment(user_id, username, name, phone, service, price, date_time):
-    conn = db(); cur = conn.cursor()
+    conn = db();
+    cur = conn.cursor()
     try:
         cur.execute("""
             INSERT INTO appointments
             (user_id, username, name, phone, service, price, date_time, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'new', ?)
         """, (user_id, username, name, phone, service, price, date_time, now_msk().isoformat()))
-        conn.commit(); ok = True
+        conn.commit();
+        ok = True
     except sqlite3.IntegrityError:
         ok = False
     finally:
@@ -295,7 +306,7 @@ def calendar_inline(prefix="date", back_cb="back_to_services", cancel_cb="cancel
 
 
 def time_slots_inline(date_str, duration_min=60, prefix="time",
-                       back_cb="back_to_calendar", cancel_cb="cancel_flow"):
+                      back_cb="back_to_calendar", cancel_cb="cancel_flow"):
     kb = types.InlineKeyboardMarkup(row_width=4)
     s = CONFIG["schedule"]
     try:
@@ -311,7 +322,8 @@ def time_slots_inline(date_str, duration_min=60, prefix="time",
     day_end = datetime.strptime(f"{date_str} {s['work_end_hour']:02d}:00", "%Y-%m-%d %H:%M")
     earliest = now_msk() + timedelta(minutes=s["min_lead_minutes"])
 
-    t = day_start; buttons = []
+    t = day_start;
+    buttons = []
     while t < day_end:
         slot_human = t.strftime("%Y-%m-%d %H:%M")
         slot_cb = t.strftime("%Y-%m-%d|%H:%M")
@@ -319,7 +331,7 @@ def time_slots_inline(date_str, duration_min=60, prefix="time",
         if t + timedelta(minutes=duration_min) > day_end:
             break
         if t < earliest:
-            buttons.append(types.InlineKeyboardButton(text=f"·{label}", callback_data="busy"))
+            buttons.append(types.InlineKeyboardButton(text=f"•{label}", callback_data="busy"))
         elif is_slot_free(slot_human, duration_min):
             buttons.append(types.InlineKeyboardButton(text=label, callback_data=f"{prefix}:{slot_cb}"))
         else:
@@ -342,7 +354,6 @@ def time_slots_inline(date_str, duration_min=60, prefix="time",
 def start(message):
     parts = message.text.split(maxsplit=1)
     payload = parts[1].strip().lower() if len(parts) > 1 else ""
-    print(f"[HANDLER] /start '{payload}' от {message.from_user.id}", flush=True)
     user_state.pop(message.from_user.id, None)
     admin_state.pop(message.from_user.id, None)
     ab_state.pop(message.from_user.id, None)
@@ -374,13 +385,13 @@ def my_cmd(message): my_appointments(message)
 @bot.message_handler(func=lambda m: m.text == "Услуги")
 def show_services(message):
     services = CONFIG["services"]
-    male = [f"• {esc(n.replace('М · ', ''))} — {esc(i['price'])} (~{i['duration']} мин)"
-            for n, i in services.items() if n.startswith("М ·")]
-    female = [f"• {esc(n.replace('Ж · ', ''))} — {esc(i['price'])} (~{i['duration']} мин)"
-              for n, i in services.items() if n.startswith("Ж ·")]
+    male = [f"• {esc(n.replace('М • ', ''))} — {esc(i['price'])} (~{i['duration']} мин)"
+            for n, i in services.items() if n.startswith("М •")]
+    female = [f"• {esc(n.replace('Ж • ', ''))} — {esc(i['price'])} (~{i['duration']} мин)"
+              for n, i in services.items() if n.startswith("Ж •")]
     text = ("✂️ <b>Мужской зал</b>\n" + "\n".join(male) + "\n\n"
-            "💇‍♀️ <b>Женский зал</b>\n" + "\n".join(female) + "\n\n"
-            f"🕒 Работаем: {salon_hours_text()}")
+                                                          "💇‍♀️ <b>Женский зал</b>\n" + "\n".join(female) + "\n\n"
+                                                                                                            f"🕒 Работаем: {salon_hours_text()}")
     bot.send_message(message.chat.id, text, parse_mode="HTML")
 
 
@@ -406,10 +417,12 @@ def cb_service(call):
     idx = int(call.data.split(":", 1)[1])
     services_list = get_services_list()
     if idx >= len(services_list):
-        bot.answer_callback_query(call.id, "Услуга недоступна"); return
+        bot.answer_callback_query(call.id, "Услуга недоступна");
+        return
     name, info = services_list[idx]
     state = user_state.setdefault(call.from_user.id, {})
-    state["service"] = name; state["price"] = info["price"]
+    state["service"] = name;
+    state["price"] = info["price"]
     bot.answer_callback_query(call.id)
     bot.edit_message_text(
         f"Услуга: {name} ({info['price']}, ~{info['duration']} мин)\n\nВыберите дату:",
@@ -434,7 +447,8 @@ def cb_date(call):
     date_str = call.data.split(":", 1)[1]
     state = user_state.setdefault(call.from_user.id, {})
     if "service" not in state:
-        bot.answer_callback_query(call.id, "Сначала выберите услугу"); return
+        bot.answer_callback_query(call.id, "Сначала выберите услугу");
+        return
     duration = _service_duration(state["service"])
     state["date"] = date_str
     bot.answer_callback_query(call.id)
@@ -468,64 +482,61 @@ def cb_time(call):
     slot = call.data.split(":", 1)[1].replace("|", " ")
     state = user_state.setdefault(call.from_user.id, {})
     if "service" not in state:
-        bot.answer_callback_query(call.id, "Сначала выберите услугу"); return
+        bot.answer_callback_query(call.id, "Сначала выберите услугу");
+        return
     duration = _service_duration(state["service"])
     if not is_slot_free(slot, duration):
-        bot.answer_callback_query(call.id, "Это время уже занято"); return
+        bot.answer_callback_query(call.id, "Это время уже занято");
+        return
+
     state["datetime"] = slot
     bot.answer_callback_query(call.id)
+
+    # Показываем кнопку согласия на обработку ПД
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("✅ Согласен на обработку данных", callback_data="agree_pd"))
+    kb.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel_flow"))
+
     bot.edit_message_text(
-        f"Услуга: {state['service']}\nВремя: {slot}\n\nВведите ваше имя:",
-        chat_id=call.message.chat.id, message_id=call.message.message_id)
-    bot.register_next_step_handler_by_chat_id(call.message.chat.id, step_name)
+        f"Вы выбрали:\nУслуга: {state['service']}\nВремя: {slot}\n\n"
+        f"Для завершения записи подтвердите согласие на обработку персональных данных (вашего @username для связи).",
+        chat_id=call.message.chat.id, message_id=call.message.message_id,
+        reply_markup=kb)
 
 
-def step_name(message):
-    name = clean_text(message.text, max_len=64)
-    if len(name) < 2:
-        msg = bot.send_message(message.chat.id, "Имя слишком короткое, введите ещё раз:")
-        bot.register_next_step_handler(msg, step_name); return
-    user_state.setdefault(message.from_user.id, {})["name"] = name
-    msg = bot.send_message(message.chat.id, "Введите номер телефона для связи:")
-    bot.register_next_step_handler(msg, step_phone)
+@bot.callback_query_handler(func=lambda c: c.data == "agree_pd")
+def cb_agree_pd(call):
+    state = user_state.get(call.from_user.id, {})
+    if "datetime" not in state or "service" not in state:
+        bot.answer_callback_query(call.id, "Что-то пошло не так. Начните заново.")
+        user_state.pop(call.from_user.id, None)
+        return
 
+    bot.answer_callback_query(call.id, "Спасибо! Записываем...")
 
-def step_phone(message):
-    phone_raw = message.text.strip()
-    digits = "".join(ch for ch in phone_raw if ch.isdigit())
-    if len(digits) < 10:
-        msg = bot.send_message(message.chat.id, "Похоже, номер некорректный. Введите ещё раз:")
-        bot.register_next_step_handler(msg, step_phone); return
-    phone = clean_text(phone_raw, max_len=32)
-    state = user_state.get(message.from_user.id, {})
-    if not all(k in state for k in ("service", "price", "datetime", "name")):
-        bot.send_message(message.chat.id, "Что-то пошло не так. Начните заново.",
-                         reply_markup=main_menu())
-        user_state.pop(message.from_user.id, None); return
-    duration = _service_duration(state["service"])
-    if not is_slot_free(state["datetime"], duration):
-        bot.send_message(message.chat.id, "Увы, это время только что заняли.",
-                         reply_markup=main_menu())
-        user_state.pop(message.from_user.id, None); return
     ok = save_appointment(
-        user_id=message.from_user.id, username=message.from_user.username or "",
-        name=state["name"], phone=phone, service=state["service"],
-        price=state["price"], date_time=state["datetime"])
+        user_id=call.from_user.id, username=call.from_user.username or "",
+        name="", phone="",
+        service=state["service"], price=state["price"], date_time=state["datetime"])
+
     if not ok:
-        bot.send_message(message.chat.id, "Увы, это время только что заняли.",
-                         reply_markup=main_menu())
-        user_state.pop(message.from_user.id, None); return
-    bot.send_message(
-        message.chat.id,
+        bot.edit_message_text("Увы, это время только что заняли.",
+                              chat_id=call.message.chat.id, message_id=call.message.message_id)
+        user_state.pop(call.from_user.id, None);
+        return
+
+    bot.edit_message_text(
         f"✅ Вы записаны!\n\nУслуга: {state['service']}\n"
-        f"Стоимость: {state['price']}\nДата и время: {state['datetime']}\n\n"
-        f"Мы свяжемся с вами для подтверждения.\nАдрес: {CONFIG['salon']['address']}",
-        reply_markup=main_menu())
+        f"Время: {state['datetime']}\n"
+        f"Адрес: {CONFIG['salon']['address']}",
+        chat_id=call.message.chat.id, message_id=call.message.message_id)
+
     notify_admins(
         f"🆕 Новая запись!\n\nУслуга: {state['service']} ({state['price']})\n"
-        f"Имя: {state['name']}\nТелефон: {phone}\nДата и время: {state['datetime']}\n"
-        f"Клиент: @{message.from_user.username or '—'} (ID: {message.from_user.id})")
-    user_state.pop(message.from_user.id, None)
+        f"Дата и время: {state['datetime']}\n"
+        f"Клиент: @{call.from_user.username or '—'} (ID: {call.from_user.id})")
+
+    user_state.pop(call.from_user.id, None)
 
 
 # ==========================================================
@@ -534,13 +545,16 @@ def step_phone(message):
 
 @bot.message_handler(func=lambda m: m.text == "Мои записи")
 def my_appointments(message):
-    conn = db(); cur = conn.cursor()
+    conn = db();
+    cur = conn.cursor()
     cur.execute("""SELECT id, service, date_time, status, price FROM appointments
                    WHERE user_id = ? AND status != 'cancelled'
                    ORDER BY date_time ASC""", (message.from_user.id,))
-    rows = cur.fetchall(); conn.close()
+    rows = cur.fetchall();
+    conn.close()
     if not rows:
-        bot.send_message(message.chat.id, "У вас пока нет активных записей."); return
+        bot.send_message(message.chat.id, "У вас пока нет активных записей.");
+        return
     for appt_id, service, dt, status, price in rows:
         text = (f"Услуга: {service} ({price})\nДата: {dt}\n"
                 f"Статус: {STATUS_LABELS_LONG.get(status, status)}")
@@ -552,15 +566,21 @@ def my_appointments(message):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("cancel:"))
 def cb_cancel_appointment(call):
     appt_id = int(call.data.split(":", 1)[1])
-    conn = db(); cur = conn.cursor()
+    conn = db();
+    cur = conn.cursor()
     cur.execute("SELECT user_id, service, date_time, status FROM appointments WHERE id = ?", (appt_id,))
     row = cur.fetchone()
     if not row or row[0] != call.from_user.id:
-        conn.close(); bot.answer_callback_query(call.id, "Запись не найдена"); return
+        conn.close();
+        bot.answer_callback_query(call.id, "Запись не найдена");
+        return
     if row[3] == "cancelled":
-        conn.close(); bot.answer_callback_query(call.id, "Уже отменена"); return
+        conn.close();
+        bot.answer_callback_query(call.id, "Уже отменена");
+        return
     cur.execute("UPDATE appointments SET status = 'cancelled' WHERE id = ?", (appt_id,))
-    conn.commit(); conn.close()
+    conn.commit();
+    conn.close()
     bot.answer_callback_query(call.id, "Отменено")
     bot.edit_message_text(f"❌ Запись отменена: {row[1]} на {row[2]}",
                           chat_id=call.message.chat.id, message_id=call.message.message_id)
@@ -596,9 +616,9 @@ def admin_root_text():
 
 @bot.message_handler(commands=["admin"])
 def admin(message):
-    print(f"[HANDLER] /admin от {message.from_user.id}", flush=True)
     if not is_admin(message.from_user.id):
-        bot.send_message(message.chat.id, "У вас нет доступа."); return
+        bot.send_message(message.chat.id, "У вас нет доступа.");
+        return
     admin_state.pop(message.from_user.id, None)
     ab_state.pop(message.from_user.id, None)
     bot.send_message(message.chat.id, admin_root_text(),
@@ -608,7 +628,8 @@ def admin(message):
 @bot.callback_query_handler(func=lambda c: c.data == "adm:root")
 def cb_adm_root(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     admin_state.pop(call.from_user.id, None)
     ab_state.pop(call.from_user.id, None)
     bot.answer_callback_query(call.id)
@@ -624,11 +645,13 @@ def cb_adm_root(call):
 # ---------- КАЛЕНДАРЬ ----------
 
 def _count_bookings_on(date_obj):
-    conn = db(); cur = conn.cursor()
+    conn = db();
+    cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM appointments "
                 "WHERE status != 'cancelled' AND date_time LIKE ?",
                 (f"{date_obj.isoformat()}%",))
-    n = cur.fetchone()[0]; conn.close()
+    n = cur.fetchone()[0];
+    conn.close()
     return n
 
 
@@ -646,7 +669,7 @@ def admin_calendar_kb():
             n = _count_bookings_on(d)
             label = f"{wd} {d.strftime('%d.%m')}"
             if n:
-                label += f" · {n}"
+                label += f" • {n}"
             buttons.append(types.InlineKeyboardButton(
                 text=label, callback_data=f"adm:cal_day:{d.isoformat()}"))
     kb.add(*buttons)
@@ -657,7 +680,8 @@ def admin_calendar_kb():
 @bot.callback_query_handler(func=lambda c: c.data == "adm:all")
 def cb_adm_all(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     bot.answer_callback_query(call.id)
     text = ("📅 <b>Календарь записей</b>\n\n"
             "Тапните по дню, чтобы увидеть все слоты.\n"
@@ -684,14 +708,16 @@ def _build_day_view(date_str):
         kb.add(types.InlineKeyboardButton("⬅️ К календарю", callback_data="adm:all"))
         return (text, kb)
 
-    conn = db(); cur = conn.cursor()
-    cur.execute("""SELECT id, name, service, date_time, status FROM appointments
+    conn = db();
+    cur = conn.cursor()
+    cur.execute("""SELECT id, username, service, date_time, status FROM appointments
                    WHERE status != 'cancelled' AND date_time LIKE ?
                    ORDER BY date_time ASC""", (f"{date_str}%",))
-    rows = cur.fetchall(); conn.close()
+    rows = cur.fetchall();
+    conn.close()
 
     busy_slots = {}
-    for appt_id, name, service, dt_str, status in rows:
+    for appt_id, username, service, dt_str, status in rows:
         try:
             dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
         except ValueError:
@@ -700,17 +726,17 @@ def _build_day_view(date_str):
         end = dt + timedelta(minutes=dur)
         t = dt
         while t < end:
-            busy_slots[t.strftime("%H:%M")] = (appt_id, name, service, status)
+            busy_slots[t.strftime("%H:%M")] = (appt_id, username, service, status)
             t += timedelta(minutes=CONFIG["schedule"]["slot_step_minutes"])
 
     lines = [f"📅 <b>{wd}, {d.strftime('%d.%m.%Y')}</b>", ""]
     if rows:
         lines.append(f"<b>Записей: {len(rows)}</b>")
-        for appt_id, name, service, dt_str, status in rows:
+        for appt_id, username, service, dt_str, status in rows:
             t = dt_str.split(" ")[1]
             st = STATUS_LABELS.get(status, "")
-            svc = service.replace('М · ', 'М ').replace('Ж · ', 'Ж ')
-            lines.append(f"  <b>{t}</b> · {esc(name)} · {esc(svc)} · {st}")
+            svc = service.replace('М • ', 'М ').replace('Ж • ', 'Ж ')
+            lines.append(f"  <b>{t}</b> • @{esc(username or '—')} • {esc(svc)} • {st}")
     else:
         lines.append("<i>Записей нет — весь день свободен.</i>")
     lines.append("")
@@ -720,7 +746,8 @@ def _build_day_view(date_str):
     s = CONFIG["schedule"]
     day_start = datetime.strptime(f"{date_str} {s['work_start_hour']:02d}:00", "%Y-%m-%d %H:%M")
     day_end = datetime.strptime(f"{date_str} {s['work_end_hour']:02d}:00", "%Y-%m-%d %H:%M")
-    t = day_start; btns = []
+    t = day_start;
+    btns = []
     while t < day_end:
         label = t.strftime("%H:%M")
         if label in busy_slots:
@@ -745,7 +772,8 @@ def _build_day_view(date_str):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("adm:cal_day:"))
 def cb_adm_cal_day(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     date_str = call.data.split(":", 2)[2]
     text, kb = _build_day_view(date_str)
     bot.answer_callback_query(call.id)
@@ -760,7 +788,8 @@ def cb_adm_cal_day(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("adm:freeslot:"))
 def cb_adm_freeslot(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     slot = call.data.split(":", 2)[2].replace("|", " ")
     bot.answer_callback_query(call.id, f"{slot} — свободно", show_alert=False)
 
@@ -768,25 +797,30 @@ def cb_adm_freeslot(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("adm:slot:"))
 def cb_adm_slot(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     try:
         appt_id = int(call.data.split(":", 2)[2])
     except ValueError:
-        bot.answer_callback_query(call.id, "Ошибка"); return
+        bot.answer_callback_query(call.id, "Ошибка");
+        return
 
-    conn = db(); cur = conn.cursor()
-    cur.execute("""SELECT name, phone, service, price, date_time, status, user_id
+    conn = db();
+    cur = conn.cursor()
+    cur.execute("""SELECT username, service, price, date_time, status, user_id
                    FROM appointments WHERE id = ?""", (appt_id,))
-    row = cur.fetchone(); conn.close()
+    row = cur.fetchone();
+    conn.close()
     if not row:
-        bot.answer_callback_query(call.id, "Запись не найдена"); return
+        bot.answer_callback_query(call.id, "Запись не найдена");
+        return
 
-    name, phone, service, price, dt, status, client_uid = row
+    username, service, price, dt, status, client_uid = row
     date_str = dt.split(" ")[0]
     time_str = dt.split(" ")[1]
 
     text = (f"<b>Запись #{appt_id}</b>\n\n"
-            f"👤 {esc(name)}\n📞 {esc(phone)}\n"
+            f"👤 @{esc(username or 'Клиент')}\n"
             f"💇 {esc(service)}\n💵 {esc(price)}\n"
             f"🕒 {date_str} в {time_str}\n"
             f"Статус: {STATUS_LABELS_LONG.get(status, status)}")
@@ -809,12 +843,15 @@ def cb_adm_slot(call):
 @bot.callback_query_handler(func=lambda c: c.data == "adm:manage")
 def cb_adm_manage(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     bot.answer_callback_query(call.id)
-    conn = db(); cur = conn.cursor()
-    cur.execute("""SELECT id, name, phone, service, date_time, status FROM appointments
+    conn = db();
+    cur = conn.cursor()
+    cur.execute("""SELECT id, username, service, date_time, status FROM appointments
                    WHERE status IN ('new','confirmed') ORDER BY date_time ASC LIMIT 20""")
-    rows = cur.fetchall(); conn.close()
+    rows = cur.fetchall();
+    conn.close()
 
     kb_back = types.InlineKeyboardMarkup()
     kb_back.add(types.InlineKeyboardButton("⬅️ В админ-панель", callback_data="adm:root"))
@@ -825,8 +862,8 @@ def cb_adm_manage(call):
         return
     bot.edit_message_text("📋 <b>Управление записями</b>", chat_id=call.message.chat.id,
                           message_id=call.message.message_id, parse_mode="HTML")
-    for appt_id, name, phone, service, dt, status in rows:
-        text = (f"#{appt_id}\nКлиент: {name}\nТелефон: {phone}\n"
+    for appt_id, username, service, dt, status in rows:
+        text = (f"#{appt_id}\nКлиент: @{username or '—'}\n"
                 f"Услуга: {service}\nВремя: {dt}\n"
                 f"Статус: {STATUS_LABELS_LONG.get(status, status)}")
         kb = types.InlineKeyboardMarkup(row_width=2)
@@ -841,16 +878,21 @@ def cb_adm_manage(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("st:"))
 def cb_status(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     _, new_status, appt_id_str = call.data.split(":")
     appt_id = int(appt_id_str)
-    conn = db(); cur = conn.cursor()
+    conn = db();
+    cur = conn.cursor()
     cur.execute("SELECT user_id, service, date_time FROM appointments WHERE id = ?", (appt_id,))
     row = cur.fetchone()
     if not row:
-        conn.close(); bot.answer_callback_query(call.id, "Не найдено"); return
+        conn.close();
+        bot.answer_callback_query(call.id, "Не найдено");
+        return
     cur.execute("UPDATE appointments SET status = ? WHERE id = ?", (new_status, appt_id))
-    conn.commit(); conn.close()
+    conn.commit();
+    conn.close()
     bot.answer_callback_query(call.id, f"Статус: {STATUS_LABELS_LONG.get(new_status, new_status)}")
     try:
         bot.edit_message_reply_markup(chat_id=call.message.chat.id,
@@ -870,12 +912,11 @@ def cb_status(call):
 
 
 # ---------- ЗАПИСЬ КЛИЕНТА АДМИНОМ ----------
-# Порядок: дата → время → услуга → имя → телефон
+# Порядок: дата → время → услуга → имя
 
 def _admin_show_date_picker(call, edit=True):
-    """Шаг 1: выбор даты."""
     text = ("➕ <b>Новая запись</b>\n\n"
-            "Шаг 1/4. Выберите дату:")
+            "Шаг 1/3. Выберите дату:")
     kb = calendar_inline(prefix="ab_date", back_cb="adm:root", cancel_cb="ab_cancel")
     if edit:
         try:
@@ -889,33 +930,34 @@ def _admin_show_date_picker(call, edit=True):
 
 
 def _admin_show_time_picker(call, date_str):
-    """Шаг 2: выбор времени."""
     try:
         d = datetime.strptime(date_str, "%Y-%m-%d").date()
         wd = WEEKDAY_NAMES[d.weekday()]
     except ValueError:
         wd = ""
 
-    conn = db(); cur = conn.cursor()
-    cur.execute("""SELECT name, service, date_time FROM appointments
+    conn = db();
+    cur = conn.cursor()
+    cur.execute("""SELECT username, service, date_time FROM appointments
                    WHERE status != 'cancelled' AND date_time LIKE ?
                    ORDER BY date_time ASC""", (f"{date_str}%",))
-    busy_rows = cur.fetchall(); conn.close()
+    busy_rows = cur.fetchall();
+    conn.close()
 
     lines = ["➕ <b>Новая запись</b>", f"📅 {wd} {date_str}", ""]
     if busy_rows:
         lines.append("<b>Уже занято:</b>")
-        for bname, bsvc, bdt in busy_rows:
+        for buser, bsvc, bdt in busy_rows:
             t = bdt.split(" ")[1]
-            svc = bsvc.replace('М · ', 'М ').replace('Ж · ', 'Ж ')
-            lines.append(f"  {t} — {esc(bname)} ({esc(svc)})")
+            svc = bsvc.replace('М • ', 'М ').replace('Ж • ', 'Ж ')
+            lines.append(f"  {t} — @{esc(buser or '—')} ({esc(svc)})")
         lines.append("")
-    lines.append("Шаг 2/4. Выберите время:")
+    lines.append("Шаг 2/3. Выберите время:")
     text = "\n".join(lines)
 
     default_dur = CONFIG["schedule"]["slot_step_minutes"]
     kb = time_slots_inline(date_str, default_dur, prefix="ab_time",
-                            back_cb="ab_back_to_date", cancel_cb="ab_cancel")
+                           back_cb="ab_back_to_date", cancel_cb="ab_cancel")
     try:
         bot.edit_message_text(text, chat_id=call.message.chat.id,
                               message_id=call.message.message_id,
@@ -926,7 +968,6 @@ def _admin_show_time_picker(call, date_str):
 
 
 def _admin_show_service_picker(call, time_str):
-    """Шаг 3: выбор услуги."""
     kb = types.InlineKeyboardMarkup(row_width=1)
     for i, (name, info) in enumerate(get_services_list()):
         kb.add(types.InlineKeyboardButton(
@@ -938,7 +979,7 @@ def _admin_show_service_picker(call, time_str):
     t_label = time_str.split(" ")[-1]
     text = (f"➕ <b>Новая запись</b>\n"
             f"🕒 Время: <b>{t_label}</b>\n\n"
-            f"Шаг 3/4. Выберите услугу:")
+            f"Шаг 3/3. Выберите услугу:")
     try:
         bot.edit_message_text(text, chat_id=call.message.chat.id,
                               message_id=call.message.message_id,
@@ -951,7 +992,8 @@ def _admin_show_service_picker(call, time_str):
 @bot.callback_query_handler(func=lambda c: c.data == "adm:new_booking")
 def cb_adm_new_booking(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     ab_state[call.from_user.id] = {}
     bot.answer_callback_query(call.id)
     _admin_show_date_picker(call)
@@ -960,23 +1002,23 @@ def cb_adm_new_booking(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("adm:book_on:"))
 def cb_adm_book_on(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
-    print(f"[BOOK_ON] {call.from_user.id} → {call.data}", flush=True)
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     try:
         date_str = call.data.split(":", 2)[2]
     except IndexError:
-        bot.answer_callback_query(call.id, "Ошибка данных"); return
+        bot.answer_callback_query(call.id, "Ошибка данных");
+        return
     ab_state[call.from_user.id] = {"date": date_str}
     bot.answer_callback_query(call.id, "Выбираем время")
     _admin_show_time_picker(call, date_str)
 
 
-# --- Шаг 1: обработка выбора даты ---
-
 @bot.callback_query_handler(func=lambda c: c.data.startswith("ab_date:"))
 def cb_ab_date(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     date_str = call.data.split(":", 1)[1]
     st = ab_state.setdefault(call.from_user.id, {})
     st["date"] = date_str
@@ -987,21 +1029,22 @@ def cb_ab_date(call):
 @bot.callback_query_handler(func=lambda c: c.data == "ab_back_to_date")
 def cb_ab_back_to_date(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     bot.answer_callback_query(call.id)
     _admin_show_date_picker(call)
 
 
-# --- Шаг 2: обработка выбора времени ---
-
 @bot.callback_query_handler(func=lambda c: c.data.startswith("ab_time:"))
 def cb_ab_time(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     slot = call.data.split(":", 1)[1].replace("|", " ")
     st = ab_state.setdefault(call.from_user.id, {})
     if "date" not in st:
-        bot.answer_callback_query(call.id, "Сначала выберите дату"); return
+        bot.answer_callback_query(call.id, "Сначала выберите дату");
+        return
     st["time"] = slot
     bot.answer_callback_query(call.id, f"Время: {slot.split(' ')[-1]}")
     _admin_show_service_picker(call, slot)
@@ -1010,28 +1053,31 @@ def cb_ab_time(call):
 @bot.callback_query_handler(func=lambda c: c.data == "ab_back_to_time")
 def cb_ab_back_to_time(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     st = ab_state.get(call.from_user.id) or {}
     if "date" not in st:
         bot.answer_callback_query(call.id, "Дата потерялась")
-        _admin_show_date_picker(call); return
+        _admin_show_date_picker(call);
+        return
     bot.answer_callback_query(call.id)
     _admin_show_time_picker(call, st["date"])
 
 
-# --- Шаг 3: обработка выбора услуги ---
-
 @bot.callback_query_handler(func=lambda c: c.data.startswith("abs_svc:"))
 def cb_abs_svc(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     try:
         idx = int(call.data.split(":", 1)[1])
     except ValueError:
-        bot.answer_callback_query(call.id, "Ошибка"); return
+        bot.answer_callback_query(call.id, "Ошибка");
+        return
     sl = get_services_list()
     if idx >= len(sl):
-        bot.answer_callback_query(call.id, "Услуга недоступна"); return
+        bot.answer_callback_query(call.id, "Услуга недоступна");
+        return
     name, info = sl[idx]
     st = ab_state.setdefault(call.from_user.id, {})
     st["service"] = name
@@ -1041,7 +1087,7 @@ def cb_abs_svc(call):
     dur = info["duration"]
     if dt and not is_slot_free(dt, dur):
         bot.answer_callback_query(call.id, "Услуга не помещается — выберите другое время",
-                                   show_alert=True)
+                                  show_alert=True)
         _admin_show_time_picker(call, st["date"])
         return
 
@@ -1054,10 +1100,10 @@ def cb_abs_svc(call):
 
     bot.edit_message_text(
         f"➕ <b>Новая запись</b>\n\n"
-        f"📅 {wd} {st.get('date','')}\n"
-        f"🕒 {st.get('time','')}\n"
+        f"📅 {wd} {st.get('date', '')}\n"
+        f"🕒 {st.get('time', '')}\n"
         f"💇 <b>{esc(name)}</b> ({esc(info['price'])}, ~{info['duration']} мин)\n\n"
-        f"Шаг 4/4. Введите имя клиента:",
+        f"Введите имя клиента (или ник):",
         chat_id=call.message.chat.id, message_id=call.message.message_id,
         parse_mode="HTML")
     bot.register_next_step_handler_by_chat_id(call.message.chat.id, ab_step_name)
@@ -1066,7 +1112,8 @@ def cb_abs_svc(call):
 @bot.callback_query_handler(func=lambda c: c.data == "ab_cancel")
 def cb_ab_cancel(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     ab_state.pop(call.from_user.id, None)
     bot.answer_callback_query(call.id, "Отменено")
     bot.send_message(call.message.chat.id, "Оформление записи отменено.",
@@ -1078,52 +1125,46 @@ def ab_step_name(message):
     name = clean_text(message.text, max_len=64)
     if len(name) < 2:
         msg = bot.send_message(message.chat.id, "Слишком коротко. Введите ещё раз:")
-        bot.register_next_step_handler(msg, ab_step_name); return
-    ab_state.setdefault(message.from_user.id, {})["name"] = name
-    msg = bot.send_message(message.chat.id, "Введите телефон клиента:")
-    bot.register_next_step_handler(msg, ab_step_phone)
-
-
-def ab_step_phone(message):
-    if not is_admin(message.from_user.id): return
-    phone_raw = message.text.strip()
-    digits = "".join(ch for ch in phone_raw if ch.isdigit())
-    if len(digits) < 10:
-        msg = bot.send_message(message.chat.id, "Похоже, номер некорректный. Введите ещё раз:")
-        bot.register_next_step_handler(msg, ab_step_phone); return
-    phone = clean_text(phone_raw, max_len=32)
+        bot.register_next_step_handler(msg, ab_step_name);
+        return
 
     st = ab_state.get(message.from_user.id, {})
+    st["name"] = name
+
     if not all(k in st for k in ("service", "price", "time", "name")):
         bot.send_message(message.chat.id, "Что-то потерялось. Начните заново.",
                          reply_markup=admin_root_kb())
-        ab_state.pop(message.from_user.id, None); return
+        ab_state.pop(message.from_user.id, None);
+        return
 
     duration = _service_duration(st["service"])
     if not is_slot_free(st["time"], duration):
         bot.send_message(message.chat.id, "Увы, это время только что заняли.",
                          reply_markup=admin_root_kb())
-        ab_state.pop(message.from_user.id, None); return
+        ab_state.pop(message.from_user.id, None);
+        return
 
+    # ИЗМЕНЕНО: сохраняем с именем, но без телефона
     ok = save_appointment(
-        user_id=0, username="", name=st["name"], phone=phone,
+        user_id=0, username="", name=st["name"], phone="",
         service=st["service"], price=st["price"], date_time=st["time"])
     if not ok:
         bot.send_message(message.chat.id, "Увы, это время только что заняли.",
                          reply_markup=admin_root_kb())
-        ab_state.pop(message.from_user.id, None); return
+        ab_state.pop(message.from_user.id, None);
+        return
 
     bot.send_message(
         message.chat.id,
         f"✅ <b>Запись оформлена</b>\n\n"
-        f"👤 {esc(st['name'])}\n📞 {esc(phone)}\n"
+        f"👤 {esc(st['name'])}\n"
         f"💇 {esc(st['service'])} ({esc(st['price'])})\n"
         f"🕒 {st['time']}",
         reply_markup=admin_root_kb(), parse_mode="HTML")
 
     notify_admins(
         f"🆕 Запись (оформил админ)\n\n"
-        f"Клиент: {st['name']}\nТелефон: {phone}\n"
+        f"Клиент: {st['name']}\n"
         f"Услуга: {st['service']} ({st['price']})\nДата и время: {st['time']}",
         skip_id=message.from_user.id)
     ab_state.pop(message.from_user.id, None)
@@ -1145,7 +1186,8 @@ def price_kb():
 @bot.callback_query_handler(func=lambda c: c.data == "adm:price")
 def cb_adm_price(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     bot.answer_callback_query(call.id)
     bot.edit_message_text("💰 <b>Прайс</b>\n\nВыберите услугу, чтобы изменить:",
                           chat_id=call.message.chat.id, message_id=call.message.message_id,
@@ -1169,11 +1211,13 @@ def service_card_kb(idx):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("pr:svc:"))
 def cb_pr_svc(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     idx = int(call.data.split(":")[2])
     services_list = get_services_list()
     if idx >= len(services_list):
-        bot.answer_callback_query(call.id, "Услуга недоступна"); return
+        bot.answer_callback_query(call.id, "Услуга недоступна");
+        return
     name, info = services_list[idx]
     bot.answer_callback_query(call.id)
     bot.edit_message_text(
@@ -1185,11 +1229,13 @@ def cb_pr_svc(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("pr:edit_name:"))
 def cb_pr_edit_name(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     idx = int(call.data.split(":")[2])
     services_list = get_services_list()
     if idx >= len(services_list):
-        bot.answer_callback_query(call.id, "Услуга недоступна"); return
+        bot.answer_callback_query(call.id, "Услуга недоступна");
+        return
     name, _ = services_list[idx]
     admin_state[call.from_user.id] = {"action": "edit_name", "idx": idx, "old": name}
     bot.answer_callback_query(call.id)
@@ -1202,11 +1248,13 @@ def cb_pr_edit_name(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("pr:edit_price:"))
 def cb_pr_edit_price(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     idx = int(call.data.split(":")[2])
     services_list = get_services_list()
     if idx >= len(services_list):
-        bot.answer_callback_query(call.id, "Услуга недоступна"); return
+        bot.answer_callback_query(call.id, "Услуга недоступна");
+        return
     name, info = services_list[idx]
     admin_state[call.from_user.id] = {"action": "edit_price", "idx": idx, "old": name}
     bot.answer_callback_query(call.id)
@@ -1220,11 +1268,13 @@ def cb_pr_edit_price(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("pr:edit_dur:"))
 def cb_pr_edit_dur(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     idx = int(call.data.split(":")[2])
     services_list = get_services_list()
     if idx >= len(services_list):
-        bot.answer_callback_query(call.id, "Услуга недоступна"); return
+        bot.answer_callback_query(call.id, "Услуга недоступна");
+        return
     name, info = services_list[idx]
     admin_state[call.from_user.id] = {"action": "edit_dur", "idx": idx, "old": name}
     bot.answer_callback_query(call.id)
@@ -1238,11 +1288,13 @@ def cb_pr_edit_dur(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("pr:del:"))
 def cb_pr_del(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     idx = int(call.data.split(":")[2])
     services_list = get_services_list()
     if idx >= len(services_list):
-        bot.answer_callback_query(call.id, "Услуга недоступна"); return
+        bot.answer_callback_query(call.id, "Услуга недоступна");
+        return
     name, _ = services_list[idx]
     kb = types.InlineKeyboardMarkup(row_width=2)
     kb.add(
@@ -1258,13 +1310,16 @@ def cb_pr_del(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("pr:del_yes:"))
 def cb_pr_del_yes(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     idx = int(call.data.split(":")[2])
     services_list = get_services_list()
     if idx >= len(services_list):
-        bot.answer_callback_query(call.id, "Не найдена"); return
+        bot.answer_callback_query(call.id, "Не найдена");
+        return
     name = services_list[idx][0]
-    CONFIG["services"].pop(name, None); save_config()
+    CONFIG["services"].pop(name, None);
+    save_config()
     bot.answer_callback_query(call.id, f"Удалено: {name}")
     bot.edit_message_text("💰 <b>Прайс</b>\n\nУслуга удалена. Выберите другую:",
                           chat_id=call.message.chat.id, message_id=call.message.message_id,
@@ -1274,11 +1329,12 @@ def cb_pr_del_yes(call):
 @bot.callback_query_handler(func=lambda c: c.data == "pr:add")
 def cb_pr_add(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     admin_state[call.from_user.id] = {"action": "add_name"}
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id,
-                     "➕ Новая услуга.\n\nПришлите <b>название</b> (можно «М · » или «Ж · »).\n"
+                     "➕ Новая услуга.\n\nПришлите <b>название</b> (можно «М • » или «Ж • »).\n"
                      "Или /cancel.", parse_mode="HTML")
     bot.register_next_step_handler_by_chat_id(call.message.chat.id, adm_step_value, "add_name")
 
@@ -1302,7 +1358,8 @@ def schedule_kb():
 @bot.callback_query_handler(func=lambda c: c.data == "adm:schedule")
 def cb_adm_schedule(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     bot.answer_callback_query(call.id)
     bot.edit_message_text("🕒 <b>Расписание</b>\n\nЧто меняем?",
                           chat_id=call.message.chat.id, message_id=call.message.message_id,
@@ -1312,7 +1369,8 @@ def cb_adm_schedule(call):
 @bot.callback_query_handler(func=lambda c: c.data == "adm:sch_start")
 def cb_adm_sch_start(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     admin_state[call.from_user.id] = {"action": "sch_start"}
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id,
@@ -1325,7 +1383,8 @@ def cb_adm_sch_start(call):
 @bot.callback_query_handler(func=lambda c: c.data == "adm:sch_end")
 def cb_adm_sch_end(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     admin_state[call.from_user.id] = {"action": "sch_end"}
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id,
@@ -1338,7 +1397,8 @@ def cb_adm_sch_end(call):
 @bot.callback_query_handler(func=lambda c: c.data == "adm:sch_offs")
 def cb_adm_sch_offs(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     bot.answer_callback_query(call.id)
     offs = CONFIG["schedule"]["days_off"]
     kb = types.InlineKeyboardMarkup(row_width=4)
@@ -1356,11 +1416,14 @@ def cb_adm_sch_offs(call):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("adm:tgl_off:"))
 def cb_adm_tgl_off(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     wd = int(call.data.split(":")[2])
     offs = CONFIG["schedule"]["days_off"]
-    if wd in offs: offs.remove(wd)
-    else: offs.append(wd)
+    if wd in offs:
+        offs.remove(wd)
+    else:
+        offs.append(wd)
     CONFIG["schedule"]["days_off"] = sorted(set(offs))
     save_config()
     bot.answer_callback_query(call.id, f"{WEEKDAY_NAMES[wd]}: обновлено")
@@ -1392,7 +1455,8 @@ def info_kb():
 @bot.callback_query_handler(func=lambda c: c.data == "adm:info")
 def cb_adm_info(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     s = CONFIG["salon"]
     bot.answer_callback_query(call.id)
     bot.edit_message_text(
@@ -1405,7 +1469,8 @@ def cb_adm_info(call):
 @bot.callback_query_handler(func=lambda c: c.data in ("adm:info_name", "adm:info_addr", "adm:info_phone"))
 def cb_adm_info_edit(call):
     if not is_admin(call.from_user.id):
-        bot.answer_callback_query(call.id, "Нет доступа"); return
+        bot.answer_callback_query(call.id, "Нет доступа");
+        return
     field = call.data.split("_")[1]
     key = {"name": "name", "addr": "address", "phone": "phone"}[field]
     admin_state[call.from_user.id] = {"action": f"info_{key}"}
@@ -1436,145 +1501,142 @@ def adm_step_value(message, expected):
     action = st.get("action")
     text = (message.text or "").strip()
     if action != expected:
-        admin_state.pop(message.from_user.id, None); return
+        admin_state.pop(message.from_user.id, None);
+        return
 
     if action == "name":
-        idx = st["idx"]; sl = get_services_list()
+        idx = st["idx"];
+        sl = get_services_list()
         if idx >= len(sl): admin_state.pop(message.from_user.id, None); return
-        old = sl[idx][0]; info = CONFIG["services"].pop(old)
-        CONFIG["services"][text] = info; save_config()
+        old = sl[idx][0];
+        info = CONFIG["services"].pop(old)
+        CONFIG["services"][text] = info;
+        save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id, f"✅ Название обновлено: <b>{esc(text)}</b>",
-                         reply_markup=admin_root_kb(), parse_mode="HTML"); return
+                         reply_markup=admin_root_kb(), parse_mode="HTML");
+        return
 
     if action == "price":
-        idx = st["idx"]; sl = get_services_list()
+        idx = st["idx"];
+        sl = get_services_list()
         if idx >= len(sl): admin_state.pop(message.from_user.id, None); return
-        CONFIG["services"][sl[idx][0]]["price"] = text; save_config()
+        CONFIG["services"][sl[idx][0]]["price"] = text;
+        save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id, f"✅ Цена обновлена: <b>{esc(text)}</b>",
-                         reply_markup=admin_root_kb(), parse_mode="HTML"); return
+                         reply_markup=admin_root_kb(), parse_mode="HTML");
+        return
 
     if action == "duration":
         if not text.isdigit() or int(text) <= 0 or int(text) > 1440:
             msg = bot.send_message(message.chat.id, "Введите число минут (1–1440):")
-            bot.register_next_step_handler(msg, adm_step_value, "duration"); return
-        idx = st["idx"]; sl = get_services_list()
+            bot.register_next_step_handler(msg, adm_step_value, "duration");
+            return
+        idx = st["idx"];
+        sl = get_services_list()
         if idx >= len(sl): admin_state.pop(message.from_user.id, None); return
-        CONFIG["services"][sl[idx][0]]["duration"] = int(text); save_config()
+        CONFIG["services"][sl[idx][0]]["duration"] = int(text);
+        save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id, f"✅ Длительность: <b>{text} мин</b>",
-                         reply_markup=admin_root_kb(), parse_mode="HTML"); return
+                         reply_markup=admin_root_kb(), parse_mode="HTML");
+        return
 
     if action == "add_name":
         if len(text) < 2:
             msg = bot.send_message(message.chat.id, "Слишком коротко. Ещё раз:")
-            bot.register_next_step_handler(msg, adm_step_value, "add_name"); return
+            bot.register_next_step_handler(msg, adm_step_value, "add_name");
+            return
         if text in CONFIG["services"]:
             msg = bot.send_message(message.chat.id, "Уже есть. Введите другое:")
-            bot.register_next_step_handler(msg, adm_step_value, "add_name"); return
+            bot.register_next_step_handler(msg, adm_step_value, "add_name");
+            return
         admin_state[message.from_user.id] = {"action": "add_price", "name": text}
         msg = bot.send_message(message.chat.id, "Теперь цену (например: <b>1500 ₽</b>):",
                                parse_mode="HTML")
-        bot.register_next_step_handler(msg, adm_step_value, "add_price"); return
+        bot.register_next_step_handler(msg, adm_step_value, "add_price");
+        return
 
     if action == "add_price":
         name = st["name"]
         admin_state[message.from_user.id] = {"action": "add_dur", "name": name, "price": text}
         msg = bot.send_message(message.chat.id, "И длительность в минутах (числом):")
-        bot.register_next_step_handler(msg, adm_step_value, "add_dur"); return
+        bot.register_next_step_handler(msg, adm_step_value, "add_dur");
+        return
 
     if action == "add_dur":
         if not text.isdigit() or int(text) <= 0 or int(text) > 1440:
             msg = bot.send_message(message.chat.id, "Введите число минут (1–1440):")
-            bot.register_next_step_handler(msg, adm_step_value, "add_dur"); return
-        name = st["name"]; price = st["price"]
-        CONFIG["services"][name] = {"price": price, "duration": int(text)}; save_config()
+            bot.register_next_step_handler(msg, adm_step_value, "add_dur");
+            return
+        name = st["name"];
+        price = st["price"]
+        CONFIG["services"][name] = {"price": price, "duration": int(text)};
+        save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id,
                          f"✅ Добавлена услуга:\n<b>{esc(name)}</b> — {esc(price)} ({text} мин)",
-                         reply_markup=admin_root_kb(), parse_mode="HTML"); return
+                         reply_markup=admin_root_kb(), parse_mode="HTML");
+        return
 
     if action == "sch_start":
         if not text.isdigit() or not (0 <= int(text) <= 23):
             msg = bot.send_message(message.chat.id, "Введите час 0–23:")
-            bot.register_next_step_handler(msg, adm_step_value, "sch_start"); return
+            bot.register_next_step_handler(msg, adm_step_value, "sch_start");
+            return
         if int(text) >= CONFIG["schedule"]["work_end_hour"]:
             msg = bot.send_message(message.chat.id, "Должно быть раньше конца. Ещё раз:")
-            bot.register_next_step_handler(msg, adm_step_value, "sch_start"); return
-        CONFIG["schedule"]["work_start_hour"] = int(text); save_config()
+            bot.register_next_step_handler(msg, adm_step_value, "sch_start");
+            return
+        CONFIG["schedule"]["work_start_hour"] = int(text);
+        save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id, f"✅ Начало: <b>{int(text):02d}:00</b>",
-                         reply_markup=admin_root_kb(), parse_mode="HTML"); return
+                         reply_markup=admin_root_kb(), parse_mode="HTML");
+        return
 
     if action == "sch_end":
         if not text.isdigit() or not (1 <= int(text) <= 24):
             msg = bot.send_message(message.chat.id, "Введите час 1–24:")
-            bot.register_next_step_handler(msg, adm_step_value, "sch_end"); return
+            bot.register_next_step_handler(msg, adm_step_value, "sch_end");
+            return
         if int(text) <= CONFIG["schedule"]["work_start_hour"]:
             msg = bot.send_message(message.chat.id, "Должно быть позже начала. Ещё раз:")
-            bot.register_next_step_handler(msg, adm_step_value, "sch_end"); return
-        CONFIG["schedule"]["work_end_hour"] = int(text); save_config()
+            bot.register_next_step_handler(msg, adm_step_value, "sch_end");
+            return
+        CONFIG["schedule"]["work_end_hour"] = int(text);
+        save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id, f"✅ Конец: <b>{int(text):02d}:00</b>",
-                         reply_markup=admin_root_kb(), parse_mode="HTML"); return
+                         reply_markup=admin_root_kb(), parse_mode="HTML");
+        return
 
     if action in ("info_name", "info_address", "info_phone"):
         key = action.split("_", 1)[1]
         if len(text) < 2:
             msg = bot.send_message(message.chat.id, "Слишком коротко. Ещё раз:")
-            bot.register_next_step_handler(msg, adm_step_value, action); return
-        CONFIG["salon"][key] = text; save_config()
+            bot.register_next_step_handler(msg, adm_step_value, action);
+            return
+        CONFIG["salon"][key] = text;
+        save_config()
         admin_state.pop(message.from_user.id, None)
         bot.send_message(message.chat.id, f"✅ Обновлено: <b>{esc(text)}</b>",
-                         reply_markup=admin_root_kb(), parse_mode="HTML"); return
+                         reply_markup=admin_root_kb(), parse_mode="HTML");
+        return
 
 
 # ==========================================================
 # ==================== НАПОМИНАНИЯ =========================
 # ==========================================================
+# ФУНКЦИИ НАПОМИНАНИЙ ОСТАВЛЕНЫ, НО НЕ ЗАПУСКАЮТСЯ (поток отключен)
 
 def check_reminders():
-    now = now_msk()
-    conn = db(); cur = conn.cursor()
-    cur.execute("""SELECT id, user_id, service, date_time, reminded_day, reminded_hour
-                   FROM appointments WHERE status IN ('new','confirmed') AND user_id != 0""")
-    rows = cur.fetchall()
-    for appt_id, user_id, service, dt_str, rd, rh in rows:
-        try:
-            dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
-        except ValueError:
-            continue
-        delta = dt - now
-        if delta <= timedelta(0): continue
-        if not rh and delta <= timedelta(hours=1, minutes=1):
-            try:
-                bot.send_message(user_id,
-                    f"⏰ Напоминание: через час — {service} в {dt.strftime('%H:%M')}.\n"
-                    f"📍 {CONFIG['salon']['address']}")
-                cur.execute("UPDATE appointments SET reminded_hour = 1 WHERE id = ?", (appt_id,))
-                conn.commit()
-            except Exception as e:
-                print("rem hour:", e, flush=True)
-        if not rd and delta <= timedelta(days=1, minutes=1):
-            try:
-                bot.send_message(user_id,
-                    f"📅 Напоминание: завтра — {service} в {dt.strftime('%H:%M')}.\n"
-                    f"📍 {CONFIG['salon']['address']}")
-                cur.execute("UPDATE appointments SET reminded_day = 1 WHERE id = ?", (appt_id,))
-                conn.commit()
-            except Exception as e:
-                print("rem day:", e, flush=True)
-    conn.close()
+    pass
 
 
 def reminder_loop():
-    while True:
-        try:
-            check_reminders()
-        except Exception as e:
-            print("Reminder loop error:", e, flush=True)
-        time.sleep(60)
+    pass
 
 
 # ==========================================================
@@ -1594,7 +1656,10 @@ if WEBHOOK_URL:
             return '', 200
         except Exception as e:
             err_text = repr(e).replace(BOT_TOKEN, "***")
-            print("webhook error:", err_text, flush=True); return '', 500
+            print("webhook error:", err_text, flush=True);
+            return '', 500
+
+
     def set_webhook():
         url = WEBHOOK_URL.rstrip('/') + '/webhook'
         try:
@@ -1606,6 +1671,7 @@ if WEBHOOK_URL:
             err_text = repr(e).replace(BOT_TOKEN, "***")
             print(f"Ошибка вебхука: {err_text}", flush=True)
 
+
 # ==========================================================
 # ================= КОМАНДЫ ================================
 # ==========================================================
@@ -1613,9 +1679,9 @@ if WEBHOOK_URL:
 def set_bot_commands():
     common = [
         BotCommand("start", "🏠 Главное меню"),
-        BotCommand("book",  "📝 Записаться"),
-        BotCommand("my",    "📋 Мои записи"),
-        BotCommand("help",  "📞 Контакты и адрес"),
+        BotCommand("book", "📝 Записаться"),
+        BotCommand("my", "📋 Мои записи"),
+        BotCommand("help", "📞 Контакты и адрес"),
     ]
     try:
         bot.set_my_commands(common)
@@ -1639,20 +1705,21 @@ def set_bot_commands():
 if WEBHOOK_URL:
     print("Режим: WEBHOOK", flush=True)
     print(f"ADMIN_IDS: {len(ADMIN_IDS)} шт.", flush=True)
-    set_webhook(); set_bot_commands()
-    threading.Thread(target=reminder_loop, daemon=True).start()
+    set_webhook();
+    set_bot_commands()
+    # threading.Thread(target=reminder_loop, daemon=True).start()  # ОТКЛЮЧЕНО
 else:
     print("Режим: POLLING", flush=True)
     print(f"ADMIN_IDS: {len(ADMIN_IDS)} шт.", flush=True)
     print(f"CONFIG_PATH: {CONFIG_PATH}", flush=True)
     try:
-        bot.remove_webhook(); time.sleep(1)
+        bot.remove_webhook();
+        time.sleep(1)
         print("Вебхук удалён.", flush=True)
     except Exception as e:
         print(f"remove_webhook: {e}", flush=True)
     set_bot_commands()
-    threading.Thread(target=reminder_loop, daemon=True).start()
-
+    # threading.Thread(target=reminder_loop, daemon=True).start()  # ОТКЛЮЧЕНО
 
 if __name__ == "__main__":
     if WEBHOOK_URL:
@@ -1662,4 +1729,3 @@ if __name__ == "__main__":
         print("  БОТ ЗАПУЩЕН", flush=True)
         print("=" * 50, flush=True)
         bot.infinity_polling(timeout=30, long_polling_timeout=25)
-
